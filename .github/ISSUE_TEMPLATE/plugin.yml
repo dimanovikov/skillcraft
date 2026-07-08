@@ -1,0 +1,35 @@
+name: plugin idea
+description: Propose a contributed rule or converter (good-first-issue candidate).
+labels: ["plugin", "good first issue"]
+body:
+  - type: dropdown
+    id: group
+    attributes:
+      label: Entry-point group
+      options:
+        - skillcraft.rules
+        - skillcraft.converters
+    validations:
+      required: true
+
+  - type: input
+    id: id
+    attributes:
+      label: Rule / converter ID
+      description: Rules use SCxxx per the taxonomy (SC1xx SKILL, SC2xx CLAUDE, SC3xx universal, SC4xx cursor).
+      placeholder: SC106
+
+  - type: textarea
+    id: spec
+    attributes:
+      label: Spec — what should it check / convert?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance test
+      description: One valid case and one invalid case the implementation must satisfy.
+    validations:
+      required: true

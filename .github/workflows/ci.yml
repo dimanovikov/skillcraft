@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --python ${{ matrix.python-version }}
+
+      - name: ruff check
+        run: uv run ruff check
+
+      - name: ruff format --check
+        run: uv run ruff format --check
+
+      - name: pytest
+        run: uv run pytest
+
+      # Dogfooding: skillcraft must pass its own lint + sync checks. If the
+      # repo's AGENTS.md / SKILL.md / CLAUDE.md drift or violate a rule, CI fails.
+      - name: dogfood — skillcraft lint --check
+        run: uv run skillcraft lint --check
+
+      - name: dogfood — skillcraft sync --check
+        run: uv run skillcraft sync --check

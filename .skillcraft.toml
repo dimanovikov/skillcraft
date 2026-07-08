@@ -1,0 +1,11 @@
+# skillcraft configuration — https://github.com/cloudroad-io/skillcraft
+[sync]
+canonical = "AGENTS.md"
+
+[[sync.targets]]
+format = "skill"
+path = "SKILL.md"
+
+[[sync.targets]]
+format = "claude"
+path = "CLAUDE.md"

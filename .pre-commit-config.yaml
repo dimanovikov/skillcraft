@@ -1,0 +1,26 @@
+# Pre-commit hooks for skillcraft.
+# Uses the project's own ruff via `uv run` (single source of truth — no version
+# drift between local dev, CI, and this hook), plus a local skillcraft self-lint.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        pass_filenames: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        pass_filenames: true
+
+      - id: skillcraft-lint
+        name: skillcraft lint (self-dogfood)
+        entry: uv run skillcraft lint --check
+        language: system
+        pass_filenames: false
+        files: \.(md|mdc)$

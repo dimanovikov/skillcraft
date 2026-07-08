@@ -1,0 +1,41 @@
+[project]
+name = "skillcraft"
+version = "0.1.0"
+description = "ESLint + Jest for agent-config files: lint, sync and scaffold SKILL.md / CLAUDE.md / AGENTS.md / .cursor rules / copilot-instructions."
+readme = "README.md"
+authors = [
+    { name = "Mitia", email = "mitia@cloudroad.io" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "pyyaml>=6",
+]
+
+[project.scripts]
+skillcraft = "skillcraft.cli:app"
+sc = "skillcraft.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "pre-commit>=3.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+pythonpath = ["."]

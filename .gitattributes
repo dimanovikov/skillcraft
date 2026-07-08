@@ -1,0 +1,3 @@
+# Normalize line endings: store AND check out as LF on every platform.
+# Prevents CRLF/LF churn in cross-platform contributions (Windows ↔ macOS/Linux).
+* text=auto eol=lf

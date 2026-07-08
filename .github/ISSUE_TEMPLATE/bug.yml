@@ -1,0 +1,48 @@
+name: bug report
+description: Report a rule that misfires, a sync bug, or a crash.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: The command you ran, and the expected vs actual output. Paste the output verbatim.
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      placeholder: skillcraft lint --check
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: skillcraft version
+      description: Output of `skillcraft version`.
+      placeholder: "skillcraft 0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rule
+    attributes:
+      label: Rule ID (if a lint rule misfired)
+      options:
+        - SC101 / SC102 / SC103 / SC104 (SKILL)
+        - SC201 / SC202 (CLAUDE)
+        - SC301 / SC302 (universal)
+        - n/a
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal repro
+      description: The smallest config file that triggers it. Paste inline.
+    validations:
+      required: true
