@@ -2,7 +2,7 @@
 #
 # The plugin API is the semver-stable public surface. Changes that alter the
 # Rule / Converter / Diagnostic shapes require a lead maintainer review.
-/src/skillcraft/plugins/api.py   @mitia
+/src/skillcraft/plugins/api.py   @cloudroad-io
 
 # Default owner for everything else.
-*                               @mitia
+*                               @cloudroad-io
