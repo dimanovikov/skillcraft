@@ -8,7 +8,8 @@ from pathlib import Path
 
 def _agents_template(name: str) -> str:
     """Render a minimal canonical AGENTS.md carrying the chosen skill name."""
-    meta = json.dumps({"name": name, "description": "Describe what this skill does."})
+    description = "Describe what this skill does and when an agent should use it."
+    meta = json.dumps({"name": name, "description": description})
     return f"""\
 <!-- skillcraft:meta {meta} -->
 

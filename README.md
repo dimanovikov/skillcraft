@@ -53,6 +53,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC102 | SKILL | in a `skills/<name>/` folder, `name` matches the folder | error |
 | SC103 | SKILL | `description` present, ≤1024 chars | error |
 | SC104 | SKILL | body ≈ <5000 tokens | warn |
+| SC105 | SKILL | `description` ≥40 chars (triggerability) | warn |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops | error/warn |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) | warn/error |
 | SC301 | ALL | required frontmatter present iff the format requires it | error |
