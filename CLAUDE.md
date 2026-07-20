@@ -1,4 +1,4 @@
-<!-- skillcraft:managed-source path=AGENTS.md sha=5eb0ba5f85c6 -->
+<!-- skillcraft:managed-source path=AGENTS.md sha=4a936d9aa0d1 -->
 
 # skillcraft
 
@@ -39,6 +39,7 @@ uv tool install skillcraft
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) |
 | SC301 | ALL | required frontmatter present iff the format requires it |
 | SC302 | ALL | no merge-conflict markers in the body |
+| SC304 | ALL | body ends with a trailing newline (warn) |
 
 ## Build & test
 

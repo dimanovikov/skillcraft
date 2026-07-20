@@ -57,6 +57,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) | warn/error |
 | SC301 | ALL | required frontmatter present iff the format requires it | error |
 | SC302 | ALL | no merge-conflict markers in the body | error |
+| SC304 | ALL | body ends with a trailing newline | warn |
 
 Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, `SC3xx` = universal, `SC4xx` = `.cursor` (v0.2). Every spec'd rule not yet implemented is an open [good-first-issue](https://github.com/cloudroad-io/skillcraft/contribute).
 
