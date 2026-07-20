@@ -133,6 +133,22 @@ def test_lint_github_format(tmp_path, monkeypatch):
     assert "SC101" in r.stdout
 
 
+def test_lint_sarif_format(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    skill_dir = tmp_path / ".claude" / "skills" / "bad"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: Bad\ndescription: x\n---\nbody\n", encoding="utf-8"
+    )
+    r = runner.invoke(app, ["lint", "--format", "sarif"])
+    assert r.exit_code == 1  # SC101 is an error
+    doc = json.loads(r.stdout)
+    assert doc["version"] == "2.1.0"
+    results = doc["runs"][0]["results"]
+    assert any(res["ruleId"] == "SC101" and res["level"] == "error" for res in results)
+    assert "SC101" in {rule["id"] for rule in doc["runs"][0]["tool"]["driver"]["rules"]}
+
+
 def test_sync_adopt(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     runner.invoke(app, ["init", "--name", "demo-skill"])

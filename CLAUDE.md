@@ -1,4 +1,4 @@
-<!-- skillcraft:managed-source path=AGENTS.md sha=5eb0ba5f85c6 -->
+<!-- skillcraft:managed-source path=AGENTS.md sha=59f9995ec728 -->
 
 # skillcraft
 
@@ -15,7 +15,7 @@ uv tool install skillcraft
 
 | Command | Purpose |
 | --- | --- |
-| `skillcraft lint [--check] [-f plain\|json\|github]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
+| `skillcraft lint [--check] [-f plain\|json\|github\|sarif]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
 | `skillcraft sync [--check] [--diff] [--adopt <file>]` | Regenerate managed targets from `AGENTS.md`; detect drift. |
 | `skillcraft init [--name <name>]` | Scaffold a minimal `AGENTS.md` + `.skillcraft.toml`. |
 | `skillcraft version` | Print the version. |
