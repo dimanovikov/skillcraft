@@ -7,7 +7,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
 [![self-lint](https://img.shields.io/badge/skillcraft-lint%20clean-brightgreen)](#dogfooding)
 
-**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md` and `AGENTS.md` — one canonical source, many managed targets, drift detection in CI.
+**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.claude/rules` and copilot-instructions — one canonical source, many managed targets, drift detection in CI.
 
 > Agent-config files are copy-pasted, drift apart across tools, and silently fail to load. `skillcraft` gives them the same lint/test/sync workflow that code already enjoys.
 
