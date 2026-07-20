@@ -199,6 +199,34 @@ class ClaudeLineCount(Rule):
 
 
 @register_rule
+class SkippedHeadingLevels(Rule):
+    """SC204 — warn when a heading jumps more than one level (``#`` → ``###``).
+
+    Skipping levels hurts readability and breaks TOC generators. Going back up
+    (``###`` → ``#``) is fine; only an *increase* greater than 1 is flagged.
+    Universal rule — runs on every format whose body is parsed into sections.
+    """
+
+    id = "SC204"
+    formats = ()  # all formats
+    severity = "warning"
+
+    def check(self, doc):
+        prev = None
+        for section in doc.sections:
+            if prev is not None and section.level - prev > 1:
+                heading = section.heading.strip()
+                yield Diagnostic(
+                    self.id,
+                    self.severity,
+                    f"heading '{heading}' jumps from level {prev} to {section.level}",
+                    file=str(doc.meta.source_path),
+                    line=section.start_line,
+                )
+            prev = section.level
+
+
+@register_rule
 class RequiredFields(Rule):
     """SC301 — required frontmatter fields present iff the format requires them."""
 
