@@ -156,3 +156,57 @@ def test_frontmatter_not_a_mapping_sets_error():
     doc = _conv("skill").parse(Path("SKILL.md"), "---\njustastring\n---\nbody\n")
     assert doc.frontmatter_error is not None
     assert "not a YAML mapping" in doc.frontmatter_error
+
+
+CURSOR_MDC = (
+    "---\n"
+    "description: Python guardrails\n"
+    "globs: '**/*.py'\n"
+    "alwaysApply: false\n"
+    "---\n\n"
+    "# Python rules\n\nUse type hints.\n"
+)
+
+
+class TestCursorConverter:
+    def test_applies_to(self):
+        c = _conv("cursor")
+        assert c.applies_to(Path(".cursor/rules/python.mdc"))
+        assert c.applies_to(Path("repo/.cursor/rules/sub/x.mdc"))
+        assert not c.applies_to(Path(".cursor/rules/python.md"))  # wrong suffix
+        assert not c.applies_to(Path("rules/x.mdc"))  # not under .cursor
+        assert not c.applies_to(Path(".cursor/x.mdc"))  # not under rules
+
+    def test_parse_maps_globs_to_scope(self):
+        doc = _conv("cursor").parse(Path(".cursor/rules/python.mdc"), CURSOR_MDC)
+        assert doc.meta.doc_type == "cursor"
+        assert doc.meta.description == "Python guardrails"
+        assert doc.meta.scope_globs == ["**/*.py"]
+        assert doc.has_frontmatter
+
+    def test_parse_globs_list(self):
+        mdc = "---\nglobs:\n  - '*.py'\n  - '*.pyi'\n---\n\nbody\n"
+        doc = _conv("cursor").parse(Path(".cursor/rules/x.mdc"), mdc)
+        assert doc.meta.scope_globs == ["*.py", "*.pyi"]
+
+    def test_parse_preserves_unknown_keys(self):
+        mdc = "---\ndescription: d\ncustomField: yes\n---\n\nbody\n"
+        doc = _conv("cursor").parse(Path(".cursor/rules/x.mdc"), mdc)
+        assert doc.meta.extra_frontmatter == {"customField": True}
+
+    def test_same_format_lossless(self):
+        c = _conv("cursor")
+        doc = c.parse(Path(".cursor/rules/python.mdc"), CURSOR_MDC)
+        assert c.render(doc) == CURSOR_MDC
+
+    def test_render_from_agents_emits_globs(self):
+        agents = (
+            '<!-- skillcraft:meta {"name":"d","description":"Python guardrails.",'
+            '"scope_globs":["**/*.py"]} -->\n\n# d\n\nbody.\n'
+        )
+        adoc = _conv("agents").parse(Path("AGENTS.md"), agents)
+        out = _conv("cursor").render(adoc)
+        assert out.startswith("---\n")
+        assert "description: Python guardrails." in out
+        assert "**/*.py" in out
+        assert "<!-- skillcraft:meta" not in out

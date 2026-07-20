@@ -32,7 +32,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 ## Why
 
 - **One source of truth.** Write `AGENTS.md` once; `skillcraft sync` regenerates `SKILL.md` and `CLAUDE.md`. Edit a target by hand and `sync --check` catches the drift.
-- **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules-v01).
+- **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules).
 - **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests.
 - **Plugin-friendly.** Add a rule or a format converter in one file, no core changes. See [Contributing](CONTRIBUTING.md).
 
@@ -45,7 +45,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | `skillcraft init [--name <name>]` | Scaffold a minimal `AGENTS.md` + `.skillcraft.toml`. |
 | `skillcraft version` | Print the version. |
 
-## Rules (v0.1)
+## Rules
 
 | ID | Scope | Rule | Severity |
 | --- | --- | --- | --- |
@@ -57,6 +57,8 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) | warn/error |
 | SC301 | ALL | required frontmatter present iff the format requires it | error |
 | SC302 | ALL | no merge-conflict markers in the body | error |
+| SC401 | CURSOR | globs well-formed and the rule is reachable | error/warn |
+| SC402 | CURSOR | not both `alwaysApply: true` and `globs` | warn |
 
 Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, `SC3xx` = universal, `SC4xx` = `.cursor` (v0.2). Every spec'd rule not yet implemented is an open [good-first-issue](https://github.com/cloudroad-io/skillcraft/contribute).
 

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from skillcraft.ir import ImportRef, find_imports
+from skillcraft.ir import ConfigDoc, DocMeta, ImportRef, find_imports
 from tests.helpers import agents_doc, claude_doc, lint_doc, rule_by_id, skill_doc
 
 
@@ -206,3 +208,51 @@ def test_valid_skill_passes_all_rules(tmp_path):
         body="# Good skill\n\nDoes useful things.\n",
     )
     assert lint_doc(doc) == []
+
+
+def _cursor_doc(frontmatter: dict, path: str = ".cursor/rules/x.mdc") -> ConfigDoc:
+    return ConfigDoc(
+        meta=DocMeta(source_path=Path(path), doc_type="cursor"),
+        body="body\n",
+        frontmatter=frontmatter,
+        has_frontmatter=True,
+    )
+
+
+class TestSC401GlobsValid:
+    def test_globs_string_ok(self):
+        doc = _cursor_doc({"globs": "**/*.py", "alwaysApply": False})
+        assert list(rule_by_id("SC401").check(doc)) == []
+
+    def test_globs_list_ok(self):
+        assert list(rule_by_id("SC401").check(_cursor_doc({"globs": ["*.py", "*.pyi"]}))) == []
+
+    def test_always_apply_no_globs_ok(self):
+        assert list(rule_by_id("SC401").check(_cursor_doc({"alwaysApply": True}))) == []
+
+    def test_no_globs_no_always_warns(self):
+        diags = list(rule_by_id("SC401").check(_cursor_doc({"alwaysApply": False})))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC401"
+        assert diags[0].severity == "warning"
+
+    def test_bad_globs_type_errors(self):
+        diags = list(rule_by_id("SC401").check(_cursor_doc({"globs": 123})))
+        assert len(diags) == 1
+        assert diags[0].severity == "error"
+
+
+class TestSC402AlwaysApplyConflict:
+    def test_conflict_warns(self):
+        diags = list(
+            rule_by_id("SC402").check(_cursor_doc({"alwaysApply": True, "globs": "**/*.py"}))
+        )
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC402"
+        assert diags[0].severity == "warning"
+
+    def test_always_only_ok(self):
+        assert list(rule_by_id("SC402").check(_cursor_doc({"alwaysApply": True}))) == []
+
+    def test_globs_only_ok(self):
+        assert list(rule_by_id("SC402").check(_cursor_doc({"globs": "**/*.py"}))) == []
