@@ -198,6 +198,53 @@ class ClaudeLineCount(Rule):
             )
 
 
+def _repo_root(path: Path) -> Path | None:
+    """Walk up from ``path`` to the nearest ancestor containing a ``.git`` dir/file.
+
+    Returns ``None`` when no repository boundary can be found (e.g. an ad-hoc
+    file outside any repo), so callers can choose to skip enforcement.
+    """
+    p = path.resolve()
+    if p.is_file():
+        p = p.parent
+    for parent in (p, *p.parents):
+        if (parent / ".git").exists():
+            return parent
+    return None
+
+
+@register_rule
+class ClaudeImportScope(Rule):
+    """SC203 — CLAUDE.md @imports must resolve inside the repository.
+
+    An import that resolves *above* the repo root (``@../../secrets.md``-style)
+    is almost always a mistake or an accidental leak. Errors on any resolved
+    import whose path escapes the repo root. Unresolved imports are SC201's job.
+    """
+
+    id = "SC203"
+    formats = ("claude",)
+    severity = "error"
+
+    def check(self, doc):
+        root = _repo_root(doc.meta.source_path)
+        if root is None:
+            return  # no repo boundary to enforce
+        for imp in doc.imports:
+            if imp.resolved is None:
+                continue  # unresolved is SC201's job
+            try:
+                imp.resolved.relative_to(root)
+            except ValueError:
+                yield Diagnostic(
+                    self.id,
+                    self.severity,
+                    f"@import '{imp.path}' resolves outside the repo root",
+                    file=str(doc.meta.source_path),
+                    line=imp.line,
+                )
+
+
 @register_rule
 class RequiredFields(Rule):
     """SC301 — required frontmatter fields present iff the format requires them."""

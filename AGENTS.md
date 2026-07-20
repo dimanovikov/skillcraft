@@ -37,6 +37,7 @@ uv tool install skillcraft
 | SC104 | SKILL | body ≈ <5000 tokens (warn past 4000) |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) |
+| SC203 | CLAUDE | `@imports` resolve inside the repo root (error) |
 | SC301 | ALL | required frontmatter present iff the format requires it |
 | SC302 | ALL | no merge-conflict markers in the body |
 

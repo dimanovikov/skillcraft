@@ -141,6 +141,51 @@ class TestSC202LineCount:
         assert diags[0].severity == "error"
 
 
+class TestSC203ImportScope:
+    def _repo(self, tmp_path):
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / ".git").mkdir()  # mark a repo boundary
+        return root
+
+    def test_import_outside_root_errors(self, tmp_path):
+        root = self._repo(tmp_path)
+        (tmp_path / "secrets.md").write_text("leaked\n", encoding="utf-8")
+        body = "see @../secrets.md\n"
+        doc = claude_doc(root / "CLAUDE.md", body=body, imports=find_imports(body, root))
+        diags = list(rule_by_id("SC203").check(doc))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC203"
+        assert diags[0].severity == "error"
+
+    def test_import_inside_root_ok(self, tmp_path):
+        root = self._repo(tmp_path)
+        (root / "docs").mkdir()
+        (root / "docs" / "policy.md").write_text("ok\n", encoding="utf-8")
+        body = "see @docs/policy.md\n"
+        doc = claude_doc(root / "CLAUDE.md", body=body, imports=find_imports(body, root))
+        assert list(rule_by_id("SC203").check(doc)) == []
+
+    def test_no_repo_skipped(self, tmp_path):
+        # no .git boundary → cannot determine scope, skip silently
+        doc = claude_doc(
+            tmp_path / "CLAUDE.md",
+            body="see @x.md\n",
+            imports=[ImportRef("x.md", None, 1)],
+        )
+        assert list(rule_by_id("SC203").check(doc)) == []
+
+    def test_unresolved_skipped(self, tmp_path):
+        # unresolved imports are SC201's job, not SC203's
+        root = self._repo(tmp_path)
+        doc = claude_doc(
+            root / "CLAUDE.md",
+            body="see @missing.md\n",
+            imports=[ImportRef("missing.md", None, 1)],
+        )
+        assert list(rule_by_id("SC203").check(doc)) == []
+
+
 class TestSC301RequiredFields:
     def test_valid_skill(self):
         doc = skill_doc(
