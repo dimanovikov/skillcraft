@@ -96,8 +96,14 @@ def parse_managed(text: str) -> dict[str, str] | None:
     return kv or None
 
 
-def strip_managed(text: str) -> str:
+def strip_managed(text: str) -> tuple[str, int]:
     """Remove the managed-source marker line and any leading blank lines.
+
+    Returns ``(stripped_text, lines_removed)`` where ``lines_removed`` is the
+    number of file lines consumed at the top (the marker line plus any blank
+    lines removed after it). Callers add this offset to body-relative line
+    numbers so diagnostics point at the real on-disk line. ``0`` when there is
+    no marker.
 
     The marker is sync infrastructure, not document content — every parser
     drops it. Removing the *whole* line (not just the match text) and stripping
@@ -105,14 +111,22 @@ def strip_managed(text: str) -> str:
     start at column 0 is still detected after a sync write prefixes the marker.
     Hand-authored files (no marker) are returned unchanged.
 
+    The offset assumes the marker leads the file (the only placement ``sync``
+    writes); a mid-file marker is still stripped but contributes a ``0`` offset.
     Legacy markers that also carried a ``sha=`` fingerprint still parse: only
     ``path`` is read, the rest is ignored.
     """
     m = MANAGED_RE.search(text)
     if m is None:
-        return text
+        return text, 0
     line_start = text.rfind("\n", 0, m.start()) + 1  # 0 when marker is on line 1
     nl = text.find("\n", m.end())
     line_end = len(text) if nl == -1 else nl + 1  # consume the marker's newline
     rest = text[:line_start] + text[line_end:]
-    return rest.lstrip("\n")
+    stripped = rest.lstrip("\n")
+    if line_start == 0:
+        leading_blanks = len(rest) - len(stripped)
+        lines_removed = text.count("\n", 0, line_end + leading_blanks)
+    else:
+        lines_removed = 0  # mid-file marker: the file's top line numbers are unchanged
+    return stripped, lines_removed

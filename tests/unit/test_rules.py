@@ -383,6 +383,18 @@ class TestSC401GlobsValid:
         assert len(diags) == 1
         assert diags[0].severity == "error"
 
+    def test_string_always_apply_is_type_error(self):
+        # #3: alwaysApply: "false" (a quoted YAML string) must be flagged as a type
+        # error, not read as truthy.
+        diags = list(rule_by_id("SC401").check(_cursor_doc({"alwaysApply": "false"})))
+        assert len(diags) == 1
+        assert diags[0].severity == "error"
+        assert "boolean" in diags[0].message
+
+    def test_numeric_always_apply_is_type_error(self):
+        diags = list(rule_by_id("SC401").check(_cursor_doc({"alwaysApply": 1})))
+        assert any(d.severity == "error" and "boolean" in d.message for d in diags)
+
 
 class TestSC402AlwaysApplyConflict:
     def test_conflict_warns(self):
@@ -398,3 +410,11 @@ class TestSC402AlwaysApplyConflict:
 
     def test_globs_only_ok(self):
         assert list(rule_by_id("SC402").check(_cursor_doc({"globs": "**/*.py"}))) == []
+
+    def test_string_always_apply_does_not_false_fire(self):
+        # #3: alwaysApply: "false" (string) must NOT trigger the alwaysApply+globs
+        # conflict (the old bool("false") == True did).
+        diags = list(
+            rule_by_id("SC402").check(_cursor_doc({"alwaysApply": "false", "globs": "**/*.py"}))
+        )
+        assert diags == []

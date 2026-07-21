@@ -1,6 +1,6 @@
 [project]
 name = "skillcraft"
-version = "0.2.0"
+version = "0.2.1"
 description = "ESLint + Jest for agent-config files: lint, sync and scaffold SKILL.md / CLAUDE.md / AGENTS.md / .cursor rules / copilot-instructions."
 readme = "README.md"
 authors = [

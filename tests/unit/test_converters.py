@@ -307,3 +307,45 @@ class TestCopilotConverter:
         out = _conv("copilot").render(adoc)
         assert out.startswith("---\n")
         assert "applyTo: '**/*.go'" in out
+
+
+class TestQodoRegressions:
+    """v0.2.1: regressions for the three qodo-code-review findings on PR #9."""
+
+    def test_marked_frontmatter_keeps_lines_file_relative(self, tmp_path):
+        # #1: a managed marker + frontmatter must not skew diagnostic line numbers.
+        from skillcraft.markers import managed_marker
+        from skillcraft.plugins.registry import all_rules
+
+        text = (
+            managed_marker("AGENTS.md") + "\n"
+            "---\nname: x\ndescription: a real description here\n---\n"
+            "# Title\n\n### Skipped\n"
+        )
+        doc = _conv("skill").parse(tmp_path / "SKILL.md", text)
+        # marker(1) + `---` + name + description + `---` (4) = 5 file lines before body
+        assert doc.line_offset == 5
+        sc204 = next(r for r in all_rules() if r.id == "SC204")
+        diags = list(sc204.check(doc))
+        assert len(diags) == 1
+        assert diags[0].line == 8  # file-relative, not body-relative (was 3 before the fix)
+
+    def test_agents_string_scope_globs_not_split_into_chars(self):
+        # #2: a scalar string scope_globs coerces to a one-element list, not
+        # list("src/**/*.ts") -> ['s','r','c',...].
+        agents = (
+            '<!-- skillcraft:meta {"name":"d","description":"d here.",'
+            '"scope_globs":"src/**/*.ts"} -->\n\n# d\n\nbody.\n'
+        )
+        doc = _conv("agents").parse(Path("AGENTS.md"), agents)
+        assert doc.meta.scope_globs == ["src/**/*.ts"]
+
+    def test_agents_string_scope_globs_renders_intact_to_cursor(self):
+        # end-to-end #2: the coerced list survives a cross-format render.
+        agents = (
+            '<!-- skillcraft:meta {"name":"d","description":"d here.",'
+            '"scope_globs":"src/**/*.ts"} -->\n\n# d\n\nbody.\n'
+        )
+        adoc = _conv("agents").parse(Path("AGENTS.md"), agents)
+        out = _conv("cursor").render(adoc)
+        assert "src/**/*.ts" in out  # intact; a char-split list would not contain this
