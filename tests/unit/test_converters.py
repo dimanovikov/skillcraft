@@ -210,3 +210,100 @@ class TestCursorConverter:
         assert "description: Python guardrails." in out
         assert "**/*.py" in out
         assert "<!-- skillcraft:meta" not in out
+
+
+CLAUDE_RULE = (
+    "---\n"
+    "description: React component rules\n"
+    "globs: 'src/**/*.tsx'\n"
+    "---\n\n"
+    "# React rules\n\nUse hooks.\n"
+)
+
+
+class TestClaudeRulesConverter:
+    def test_applies_to(self):
+        c = _conv("claude_rules")
+        assert c.applies_to(Path(".claude/rules/react.md"))
+        assert c.applies_to(Path("repo/.claude/rules/sub/x.md"))
+        assert not c.applies_to(Path(".claude/rules/x.mdc"))  # wrong suffix
+        assert not c.applies_to(Path("rules/x.md"))  # not under .claude
+        assert not c.applies_to(Path("CLAUDE.md"))
+
+    def test_parse_maps_globs(self):
+        doc = _conv("claude_rules").parse(Path(".claude/rules/react.md"), CLAUDE_RULE)
+        assert doc.meta.doc_type == "claude_rules"
+        assert doc.meta.description == "React component rules"
+        assert doc.meta.scope_globs == ["src/**/*.tsx"]
+
+    def test_same_format_lossless(self):
+        c = _conv("claude_rules")
+        doc = c.parse(Path(".claude/rules/react.md"), CLAUDE_RULE)
+        assert c.render(doc) == CLAUDE_RULE
+
+    def test_render_from_agents_emits_globs(self):
+        agents = (
+            '<!-- skillcraft:meta {"name":"d","description":"React rules.",'
+            '"scope_globs":["**/*.tsx"]} -->\n\n# d\n\nbody.\n'
+        )
+        adoc = _conv("agents").parse(Path("AGENTS.md"), agents)
+        out = _conv("claude_rules").render(adoc)
+        assert out.startswith("---\n")
+        assert "description: React rules." in out
+        assert "**/*.tsx" in out
+
+
+COPILOT_PLAIN = "# Copilot instructions\n\nGeneral guidance for the repo.\n"
+COPILOT_INSTR = (
+    "---\napplyTo: '**/*.go'\ndescription: Go conventions\n---\n\n# Go rules\n\nUse gofmt.\n"
+)
+
+
+class TestCopilotConverter:
+    def test_applies_to_plain(self):
+        c = _conv("copilot")
+        assert c.applies_to(Path(".github/copilot-instructions.md"))
+        assert c.applies_to(Path("repo/.github/copilot-instructions.md"))
+
+    def test_applies_to_instructions(self):
+        c = _conv("copilot")
+        assert c.applies_to(Path(".github/instructions/go.instructions.md"))
+        assert c.applies_to(Path("repo/.github/instructions/sub/x.instructions.md"))
+        assert not c.applies_to(Path(".github/instructions/x.md"))  # wrong suffix
+
+    def test_not_unrelated_files(self):
+        c = _conv("copilot")
+        assert not c.applies_to(Path("AGENTS.md"))
+        assert not c.applies_to(Path("docs/copilot-instructions.md"))  # not under .github
+
+    def test_parse_plain_no_frontmatter(self):
+        doc = _conv("copilot").parse(Path(".github/copilot-instructions.md"), COPILOT_PLAIN)
+        assert doc.meta.doc_type == "copilot"
+        assert not doc.has_frontmatter
+        assert doc.body == COPILOT_PLAIN
+
+    def test_parse_instruction_apply_to(self):
+        doc = _conv("copilot").parse(Path(".github/instructions/go.instructions.md"), COPILOT_INSTR)
+        assert doc.has_frontmatter
+        assert doc.meta.description == "Go conventions"
+        assert doc.meta.scope_globs == ["**/*.go"]
+
+    def test_same_format_lossless_plain(self):
+        c = _conv("copilot")
+        doc = c.parse(Path(".github/copilot-instructions.md"), COPILOT_PLAIN)
+        assert c.render(doc) == COPILOT_PLAIN
+
+    def test_same_format_lossless_instruction(self):
+        c = _conv("copilot")
+        doc = c.parse(Path(".github/instructions/go.instructions.md"), COPILOT_INSTR)
+        assert c.render(doc) == COPILOT_INSTR
+
+    def test_render_from_agents_emits_apply_to(self):
+        agents = (
+            '<!-- skillcraft:meta {"name":"d","description":"Go rules.",'
+            '"scope_globs":["**/*.go"]} -->\n\n# d\n\nbody.\n'
+        )
+        adoc = _conv("agents").parse(Path("AGENTS.md"), agents)
+        out = _conv("copilot").render(adoc)
+        assert out.startswith("---\n")
+        assert "applyTo: '**/*.go'" in out

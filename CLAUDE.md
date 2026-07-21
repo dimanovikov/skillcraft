@@ -2,7 +2,7 @@
 
 # skillcraft
 
-**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md` (and, in v0.2, `.cursor/rules`, `.claude/rules`, copilot-instructions). One canonical source, many managed targets, drift detection in CI.
+**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.claude/rules` and copilot-instructions. One canonical source, many managed targets, drift detection in CI.
 
 ## Install
 
