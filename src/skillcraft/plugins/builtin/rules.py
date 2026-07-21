@@ -394,3 +394,72 @@ class MissingTrailingNewline(Rule):
                 "file should end with a trailing newline",
                 file=str(doc.meta.source_path),
             )
+
+
+@register_rule
+class CursorGlobsValid(Rule):
+    """SC401 — Cursor rule globs are well-formed and the rule is reachable.
+
+    A ``.mdc`` rule applies either when its ``globs`` match the open file or
+    when ``alwaysApply: true``. With neither, the rule silently never fires.
+    Errors on a malformed ``globs`` type; warns on a rule that has no globs
+    and ``alwaysApply`` not set to true.
+    """
+
+    id = "SC401"
+    formats = ("cursor",)
+    severity = "error"
+
+    def check(self, doc):
+        fm = doc.frontmatter or {}
+        globs = fm.get("globs")
+        if globs is not None and not isinstance(globs, (str, list)):
+            yield Diagnostic(
+                self.id,
+                "error",
+                "'globs' must be a string or list of glob patterns",
+                file=str(doc.meta.source_path),
+            )
+            return
+        always = bool(fm.get("alwaysApply", False))
+        globs_empty = (
+            globs is None
+            or (isinstance(globs, str) and not globs.strip())
+            or (isinstance(globs, list) and len(globs) == 0)
+        )
+        if not always and globs_empty:
+            yield Diagnostic(
+                self.id,
+                "warning",
+                "Cursor rule has no globs and alwaysApply is false — it will never trigger",
+                file=str(doc.meta.source_path),
+            )
+
+
+@register_rule
+class CursorAlwaysApplyConflict(Rule):
+    """SC402 — warn when ``alwaysApply: true`` and ``globs`` are both set.
+
+    Cursor ignores ``globs`` when ``alwaysApply`` is true, so specifying both
+    is misleading. Warn so the author picks one or the other.
+    """
+
+    id = "SC402"
+    formats = ("cursor",)
+    severity = "warning"
+
+    def check(self, doc):
+        fm = doc.frontmatter or {}
+        if not bool(fm.get("alwaysApply", False)):
+            return
+        globs = fm.get("globs")
+        has_globs = (isinstance(globs, str) and globs.strip()) or (
+            isinstance(globs, list) and len(globs) > 0
+        )
+        if has_globs:
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                "'alwaysApply: true' ignores globs — set one or the other",
+                file=str(doc.meta.source_path),
+            )

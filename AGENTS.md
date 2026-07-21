@@ -27,7 +27,7 @@ uv tool install skillcraft
 - **Sync.** `skillcraft sync` renders each target from the canonical doc and writes it with a `<!-- skillcraft:managed-source path=AGENTS.md -->` marker. `skillcraft sync --check` exits 1 if any managed target drifted (CI). Unmanaged files are never overwritten; opt in with `--adopt`.
 - **Plugins.** Subclass `Rule` or `Converter`, decorate with `@register_rule` / `@register_converter`, and (for external packages) declare an entry-point in `skillcraft.rules` / `skillcraft.converters`. See `CONTRIBUTING.md`.
 
-## Rules (v0.1)
+## Rules
 
 | ID | Scope | Rule |
 | --- | --- | --- |
@@ -43,6 +43,8 @@ uv tool install skillcraft
 | SC301 | ALL | required frontmatter present iff the format requires it |
 | SC302 | ALL | no merge-conflict markers in the body |
 | SC304 | ALL | body ends with a trailing newline (warn) |
+| SC401 | CURSOR | globs well-formed and the rule is reachable (error/warn) |
+| SC402 | CURSOR | not both `alwaysApply: true` and `globs` (warn) |
 
 ## Build & test
 
