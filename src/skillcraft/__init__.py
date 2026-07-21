@@ -5,4 +5,4 @@ copilot-instructions. Plugin-friendly: add lint rules and format converters
 via entry-points (see docs/plugin-guide.md).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

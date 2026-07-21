@@ -2,7 +2,7 @@
 
 # skillcraft
 
-**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md` (and, in v0.2, `.cursor/rules`, `.claude/rules`, copilot-instructions). One canonical source, many managed targets, drift detection in CI.
+**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.claude/rules` and copilot-instructions. One canonical source, many managed targets, drift detection in CI.
 
 ## Install
 
@@ -15,7 +15,7 @@ uv tool install skillcraft
 
 | Command | Purpose |
 | --- | --- |
-| `skillcraft lint [--check] [-f plain\|json\|github]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
+| `skillcraft lint [--check] [-f plain\|json\|github\|sarif]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
 | `skillcraft sync [--check] [--diff] [--adopt <file>]` | Regenerate managed targets from `AGENTS.md`; detect drift. |
 | `skillcraft init [--name <name>]` | Scaffold a minimal `AGENTS.md` + `.skillcraft.toml`. |
 | `skillcraft version` | Print the version. |
@@ -24,10 +24,10 @@ uv tool install skillcraft
 
 - **Canonical source = `AGENTS.md`** (vendor-neutral, schema-less). Richer metadata (name, description, scope, license, …) rides in invisible `<!-- skillcraft:meta <json> -->` comments — valid markdown to every consumer, machine-readable to `skillcraft`.
 - **IR: `ConfigDoc`.** Every parser emits it, every renderer consumes it. Same-format parse→render is lossless; `extra_frontmatter` escape hatch guarantees no field is silently dropped.
-- **Sync.** `skillcraft sync` renders each target from the canonical doc and writes it with a `<!-- skillcraft:managed-source path=AGENTS.md sha=… -->` marker. `skillcraft sync --check` exits 1 if any managed target drifted (CI). Unmanaged files are never overwritten; opt in with `--adopt`.
+- **Sync.** `skillcraft sync` renders each target from the canonical doc and writes it with a `<!-- skillcraft:managed-source path=AGENTS.md -->` marker. `skillcraft sync --check` exits 1 if any managed target drifted (CI). Unmanaged files are never overwritten; opt in with `--adopt`.
 - **Plugins.** Subclass `Rule` or `Converter`, decorate with `@register_rule` / `@register_converter`, and (for external packages) declare an entry-point in `skillcraft.rules` / `skillcraft.converters`. See `CONTRIBUTING.md`.
 
-## Rules (v0.1)
+## Rules
 
 | ID | Scope | Rule |
 | --- | --- | --- |
@@ -35,10 +35,16 @@ uv tool install skillcraft
 | SC102 | SKILL | in a `skills/<name>/` folder, `name` matches the folder |
 | SC103 | SKILL | `description` present, ≤1024 chars |
 | SC104 | SKILL | body ≈ <5000 tokens (warn past 4000) |
+| SC105 | SKILL | `description` ≥40 chars for triggerability (warn) |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) |
+| SC203 | CLAUDE | `@imports` resolve inside the repo root (error) |
+| SC204 | ALL | no skipped heading levels (warn) |
 | SC301 | ALL | required frontmatter present iff the format requires it |
 | SC302 | ALL | no merge-conflict markers in the body |
+| SC304 | ALL | body ends with a trailing newline (warn) |
+| SC401 | CURSOR | globs well-formed and the rule is reachable (error/warn) |
+| SC402 | CURSOR | not both `alwaysApply: true` and `globs` (warn) |
 
 ## Build & test
 

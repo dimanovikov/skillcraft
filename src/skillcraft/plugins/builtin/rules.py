@@ -100,6 +100,34 @@ class SkillDescription(Rule):
 
 
 @register_rule
+class SkillDescriptionTooShort(Rule):
+    """SC105 — skill ``description`` should be ≥40 chars for triggerability.
+
+    Agents match skills on description text, so a terse description makes a
+    skill hard to trigger. Presence (SC301) and the length ceiling (SC103) are
+    owned elsewhere; this rule is purely about description *quality*.
+    """
+
+    id = "SC105"
+    formats = ("skill",)
+    severity = "warning"
+    MIN_LENGTH = 40
+
+    def check(self, doc):
+        desc = doc.meta.description
+        if not isinstance(desc, str) or not desc.strip():
+            return  # missing/blank is SC301/SC103's job
+        if len(desc) < self.MIN_LENGTH:
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                f"skill 'description' is {len(desc)} chars; "
+                f"use >= {self.MIN_LENGTH} for triggerability",
+                file=str(doc.meta.source_path),
+            )
+
+
+@register_rule
 class SkillBodyTokens(Rule):
     """SC104 — skill body estimated <5000 tokens (warn past 4000)."""
 
@@ -198,6 +226,81 @@ class ClaudeLineCount(Rule):
             )
 
 
+def _repo_root(path: Path) -> Path | None:
+    """Walk up from ``path`` to the nearest ancestor containing a ``.git`` dir/file.
+
+    Returns ``None`` when no repository boundary can be found (e.g. an ad-hoc
+    file outside any repo), so callers can choose to skip enforcement.
+    """
+    p = path.resolve()
+    if p.is_file():
+        p = p.parent
+    for parent in (p, *p.parents):
+        if (parent / ".git").exists():
+            return parent
+    return None
+
+
+@register_rule
+class ClaudeImportScope(Rule):
+    """SC203 — CLAUDE.md @imports must resolve inside the repository.
+
+    An import that resolves *above* the repo root (``@../../secrets.md``-style)
+    is almost always a mistake or an accidental leak. Errors on any resolved
+    import whose path escapes the repo root. Unresolved imports are SC201's job.
+    """
+
+    id = "SC203"
+    formats = ("claude",)
+    severity = "error"
+
+    def check(self, doc):
+        root = _repo_root(doc.meta.source_path)
+        if root is None:
+            return  # no repo boundary to enforce
+        for imp in doc.imports:
+            if imp.resolved is None:
+                continue  # unresolved is SC201's job
+            try:
+                imp.resolved.relative_to(root)
+            except ValueError:
+                yield Diagnostic(
+                    self.id,
+                    self.severity,
+                    f"@import '{imp.path}' resolves outside the repo root",
+                    file=str(doc.meta.source_path),
+                    line=imp.line,
+                )
+
+
+@register_rule
+class SkippedHeadingLevels(Rule):
+    """SC204 — warn when a heading jumps more than one level (``#`` → ``###``).
+
+    Skipping levels hurts readability and breaks TOC generators. Going back up
+    (``###`` → ``#``) is fine; only an *increase* greater than 1 is flagged.
+    Universal rule — runs on every format whose body is parsed into sections.
+    """
+
+    id = "SC204"
+    formats = ()  # all formats
+    severity = "warning"
+
+    def check(self, doc):
+        prev = None
+        for section in doc.sections:
+            if prev is not None and section.level - prev > 1:
+                heading = section.heading.strip()
+                yield Diagnostic(
+                    self.id,
+                    self.severity,
+                    f"heading '{heading}' jumps from level {prev} to {section.level}",
+                    file=str(doc.meta.source_path),
+                    line=section.start_line,
+                )
+            prev = section.level
+
+
 @register_rule
 class RequiredFields(Rule):
     """SC301 — required frontmatter fields present iff the format requires them."""
@@ -268,3 +371,95 @@ class NoMergeConflictMarkers(Rule):
                     file=str(doc.meta.source_path),
                     line=idx,
                 )
+
+
+@register_rule
+class MissingTrailingNewline(Rule):
+    """SC304 — config files should end with a trailing newline.
+
+    POSIX text files end with a newline; many tools and editors expect it.
+    Universal rule (runs on every format). Only the body is checked, so an
+    empty file or a frontmatter-only SKILL.md is left alone.
+    """
+
+    id = "SC304"
+    formats = ()  # all formats
+    severity = "warning"
+
+    def check(self, doc):
+        if doc.body and not doc.body.endswith("\n"):
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                "file should end with a trailing newline",
+                file=str(doc.meta.source_path),
+            )
+
+
+@register_rule
+class CursorGlobsValid(Rule):
+    """SC401 — Cursor rule globs are well-formed and the rule is reachable.
+
+    A ``.mdc`` rule applies either when its ``globs`` match the open file or
+    when ``alwaysApply: true``. With neither, the rule silently never fires.
+    Errors on a malformed ``globs`` type; warns on a rule that has no globs
+    and ``alwaysApply`` not set to true.
+    """
+
+    id = "SC401"
+    formats = ("cursor",)
+    severity = "error"
+
+    def check(self, doc):
+        fm = doc.frontmatter or {}
+        globs = fm.get("globs")
+        if globs is not None and not isinstance(globs, (str, list)):
+            yield Diagnostic(
+                self.id,
+                "error",
+                "'globs' must be a string or list of glob patterns",
+                file=str(doc.meta.source_path),
+            )
+            return
+        always = bool(fm.get("alwaysApply", False))
+        globs_empty = (
+            globs is None
+            or (isinstance(globs, str) and not globs.strip())
+            or (isinstance(globs, list) and len(globs) == 0)
+        )
+        if not always and globs_empty:
+            yield Diagnostic(
+                self.id,
+                "warning",
+                "Cursor rule has no globs and alwaysApply is false — it will never trigger",
+                file=str(doc.meta.source_path),
+            )
+
+
+@register_rule
+class CursorAlwaysApplyConflict(Rule):
+    """SC402 — warn when ``alwaysApply: true`` and ``globs`` are both set.
+
+    Cursor ignores ``globs`` when ``alwaysApply`` is true, so specifying both
+    is misleading. Warn so the author picks one or the other.
+    """
+
+    id = "SC402"
+    formats = ("cursor",)
+    severity = "warning"
+
+    def check(self, doc):
+        fm = doc.frontmatter or {}
+        if not bool(fm.get("alwaysApply", False)):
+            return
+        globs = fm.get("globs")
+        has_globs = (isinstance(globs, str) and globs.strip()) or (
+            isinstance(globs, list) and len(globs) > 0
+        )
+        if has_globs:
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                "'alwaysApply: true' ignores globs — set one or the other",
+                file=str(doc.meta.source_path),
+            )

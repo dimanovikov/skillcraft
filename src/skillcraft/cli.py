@@ -13,7 +13,14 @@ import typer
 from skillcraft import __version__
 from skillcraft.config import load_config
 from skillcraft.discover import discover
-from skillcraft.lint import format_github, format_json, format_plain, has_errors, lint_paths
+from skillcraft.lint import (
+    format_github,
+    format_json,
+    format_plain,
+    format_sarif,
+    has_errors,
+    lint_paths,
+)
 from skillcraft.plugins.registry import converter_for_path
 from skillcraft.scaffold.init import init_repo
 from skillcraft.sync import TargetSpec, adopt_target, run_sync
@@ -25,7 +32,12 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-_FORMATTERS = {"plain": format_plain, "json": format_json, "github": format_github}
+_FORMATTERS = {
+    "plain": format_plain,
+    "json": format_json,
+    "github": format_github,
+    "sarif": format_sarif,
+}
 
 
 @app.command()
@@ -43,12 +55,12 @@ def lint(
         False, "--check", help="Suppress output; exit 1 if any errors (for CI)."
     ),
     fmt: str = typer.Option(  # noqa: B008
-        "plain", "--format", "-f", help="Output format: plain|json|github."
+        "plain", "--format", "-f", help="Output format: plain|json|github|sarif."
     ),
 ) -> None:
     """Lint agent-config files against the built-in rules."""
     if fmt not in _FORMATTERS:
-        typer.echo(f"unknown format '{fmt}' (use plain|json|github)", err=True)
+        typer.echo(f"unknown format '{fmt}' (use plain|json|github|sarif)", err=True)
         raise typer.Exit(code=2)
     targets: list[Path] = []
     for p in paths or [Path(".")]:

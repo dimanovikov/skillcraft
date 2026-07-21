@@ -17,6 +17,7 @@ from typing import Any
 # --- document types ---------------------------------------------------------
 TYPE_AGENTS = "agents"
 TYPE_CLAUDE = "claude"
+TYPE_CLAUDE_RULES = "claude_rules"
 TYPE_SKILL = "skill"
 TYPE_CURSOR = "cursor"
 TYPE_COPILOT = "copilot"

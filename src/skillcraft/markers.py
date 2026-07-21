@@ -8,12 +8,11 @@ schema-less canonical ``AGENTS.md`` carry the richer metadata of SKILL.md /
 Comment types:
 * ``<!-- skillcraft:meta <json> -->``     — carried metadata (name, description, …)
 * ``<!-- skillcraft:scope <json> -->``    — scope_globs a target can't express natively
-* ``<!-- skillcraft:managed-source path=… sha=… -->`` — marks a sync-managed target
+* ``<!-- skillcraft:managed-source path=… -->`` — marks a sync-managed target
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 
@@ -75,8 +74,9 @@ def strip_meta_comments(body: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", collapsed)
 
 
-def managed_marker(source_path: str, sha: str) -> str:
-    return f"<!-- skillcraft:managed-source path={source_path} sha={sha} -->"
+def managed_marker(source_path: str) -> str:
+    """The managed-source marker written at the top of a sync-managed target."""
+    return f"<!-- skillcraft:managed-source path={source_path} -->"
 
 
 def _parse_kv(s: str) -> dict[str, str]:
@@ -104,6 +104,9 @@ def strip_managed(text: str) -> str:
     the blank line(s) it leaves at the top ensures a frontmatter block that must
     start at column 0 is still detected after a sync write prefixes the marker.
     Hand-authored files (no marker) are returned unchanged.
+
+    Legacy markers that also carried a ``sha=`` fingerprint still parse: only
+    ``path`` is read, the rest is ignored.
     """
     m = MANAGED_RE.search(text)
     if m is None:
@@ -113,8 +116,3 @@ def strip_managed(text: str) -> str:
     line_end = len(text) if nl == -1 else nl + 1  # consume the marker's newline
     rest = text[:line_start] + text[line_end:]
     return rest.lstrip("\n")
-
-
-def content_sha(text: str) -> str:
-    """Short stable hash of content, for drift detection."""
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]

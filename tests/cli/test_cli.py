@@ -15,7 +15,7 @@ def test_version():
     r = runner.invoke(app, ["version"])
     assert r.exit_code == 0
     assert "skillcraft" in r.stdout
-    assert "0.1.0" in r.stdout
+    assert "0.2.0" in r.stdout
 
 
 def test_init_creates_files(tmp_path, monkeypatch):
@@ -131,6 +131,22 @@ def test_lint_github_format(tmp_path, monkeypatch):
     # POSIX paths so GitHub renders clickable PR annotations on every platform
     assert "::error file=.claude/skills/bad/SKILL.md" in r.stdout
     assert "SC101" in r.stdout
+
+
+def test_lint_sarif_format(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    skill_dir = tmp_path / ".claude" / "skills" / "bad"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: Bad\ndescription: x\n---\nbody\n", encoding="utf-8"
+    )
+    r = runner.invoke(app, ["lint", "--format", "sarif"])
+    assert r.exit_code == 1  # SC101 is an error
+    doc = json.loads(r.stdout)
+    assert doc["version"] == "2.1.0"
+    results = doc["runs"][0]["results"]
+    assert any(res["ruleId"] == "SC101" and res["level"] == "error" for res in results)
+    assert "SC101" in {rule["id"] for rule in doc["runs"][0]["tool"]["driver"]["rules"]}
 
 
 def test_sync_adopt(tmp_path, monkeypatch):

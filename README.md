@@ -7,7 +7,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
 [![self-lint](https://img.shields.io/badge/skillcraft-lint%20clean-brightgreen)](#dogfooding)
 
-**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md` and `AGENTS.md` — one canonical source, many managed targets, drift detection in CI.
+**ESLint + Jest for agent-config files.** `skillcraft` lints, syncs and scaffolds the fragmented ecosystem of `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.claude/rules` and copilot-instructions — one canonical source, many managed targets, drift detection in CI.
 
 > Agent-config files are copy-pasted, drift apart across tools, and silently fail to load. `skillcraft` gives them the same lint/test/sync workflow that code already enjoys.
 
@@ -32,20 +32,20 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 ## Why
 
 - **One source of truth.** Write `AGENTS.md` once; `skillcraft sync` regenerates `SKILL.md` and `CLAUDE.md`. Edit a target by hand and `sync --check` catches the drift.
-- **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules-v01).
-- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests.
+- **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules).
+- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests. `--format=sarif` emits a SARIF 2.1.0 report for GitHub's **Security → Code scanning** (upload with `github/codeql-action/upload-sarif`).
 - **Plugin-friendly.** Add a rule or a format converter in one file, no core changes. See [Contributing](CONTRIBUTING.md).
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `skillcraft lint [--check] [-f plain\|json\|github]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
+| `skillcraft lint [--check] [-f plain\|json\|github\|sarif]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
 | `skillcraft sync [--check] [--diff] [--adopt <file>]` | Regenerate managed targets from `AGENTS.md`; detect or rewrite drift. |
 | `skillcraft init [--name <name>]` | Scaffold a minimal `AGENTS.md` + `.skillcraft.toml`. |
 | `skillcraft version` | Print the version. |
 
-## Rules (v0.1)
+## Rules
 
 | ID | Scope | Rule | Severity |
 | --- | --- | --- | --- |
@@ -53,10 +53,16 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC102 | SKILL | in a `skills/<name>/` folder, `name` matches the folder | error |
 | SC103 | SKILL | `description` present, ≤1024 chars | error |
 | SC104 | SKILL | body ≈ <5000 tokens | warn |
+| SC105 | SKILL | `description` ≥40 chars (triggerability) | warn |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops | error/warn |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) | warn/error |
+| SC203 | CLAUDE | `@imports` resolve inside the repo root | error |
+| SC204 | ALL | no skipped heading levels | warn |
 | SC301 | ALL | required frontmatter present iff the format requires it | error |
 | SC302 | ALL | no merge-conflict markers in the body | error |
+| SC304 | ALL | body ends with a trailing newline | warn |
+| SC401 | CURSOR | globs well-formed and the rule is reachable | error/warn |
+| SC402 | CURSOR | not both `alwaysApply: true` and `globs` | warn |
 
 Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, `SC3xx` = universal, `SC4xx` = `.cursor` (v0.2). Every spec'd rule not yet implemented is an open [good-first-issue](https://github.com/cloudroad-io/skillcraft/contribute).
 
@@ -74,7 +80,7 @@ Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, 
 Every format parses into a single `ConfigDoc` IR and renders back out. Same-format parse→render is **lossless**; an `extra_frontmatter` escape hatch guarantees no field is ever silently dropped. Managed targets carry a marker:
 
 ```markdown
-<!-- skillcraft:managed-source path=AGENTS.md sha=30b2058ede77 -->
+<!-- skillcraft:managed-source path=AGENTS.md -->
 ```
 
 `sync --check` compares each managed target against a fresh render and fails CI on any difference. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full model.
@@ -113,8 +119,9 @@ Converters (new formats) use the identical shape under the `skillcraft.converter
 
 ## Roadmap
 
-- **v0.1** — lint (8 rules, 3 formats) + sync + init + version + `--format=github`. Plugin API frozen. *(this release)*
-- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions, legacy `.cursorrules` migration; static `test` (fixture-based, no model calls); autofix for SC101/SC102.
+- **v0.1** — lint (8 rules, 3 formats) + sync + init + version + `--format=github`. Plugin API frozen.
+- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions converters; rules SC105/SC203/SC204/SC304/SC401/SC402; `--format=sarif`. *(this release)*
+- **Next** — legacy `.cursorrules` migration; static `test` (fixture-based, no model calls); autofix for SC101/SC102.
 - **v1.0** — semver-frozen API, `--fix` everywhere, `skillcraft doctor`, pre-commit hook, `--reverse` promotion, PyPI trusted publishing.
 - **v2** — live model evals (`skillcraft test --eval`).
 

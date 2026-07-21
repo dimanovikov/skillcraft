@@ -3,10 +3,15 @@
 Built-ins self-register on import (via the decorators). External plugins are
 discovered through the ``skillcraft.rules`` / ``skillcraft.converters``
 entry-point groups (ruff/pytest style).
+
+A broken external plugin is swallowed (it must never kill the tool), and an
+external plugin that reuses a built-in id is refused — built-ins always win, so
+a third-party rule/converter cannot silently disable a built-in.
 """
 
 from __future__ import annotations
 
+import sys
 from importlib.metadata import entry_points
 from pathlib import Path
 
@@ -14,7 +19,18 @@ from skillcraft.plugins.api import Converter, Rule
 
 _RULES: dict[str, Rule] = {}
 _CONVERTERS: dict[str, Converter] = {}
+# IDs claimed by built-ins, snapshotted once after the built-in modules import.
+# Lets register_* refuse an external plugin that tries to shadow a built-in.
+_BUILTIN_RULE_IDS: set[str] = set()
+_BUILTIN_CONVERTER_IDS: set[str] = set()
 _LOADED = False
+
+
+def _warn_shadow(kind: str, ident: str, cls_name: str) -> None:
+    print(
+        f"skillcraft: {kind} {ident!r} from {cls_name!r} shadows a built-in; keeping the built-in.",
+        file=sys.stderr,
+    )
 
 
 def register_rule(cls: type[Rule]) -> type[Rule]:
@@ -23,6 +39,9 @@ def register_rule(cls: type[Rule]) -> type[Rule]:
     if not instance.id:
         msg = f"{cls.__name__}: Rule.id must be set"
         raise ValueError(msg)
+    if instance.id in _RULES and instance.id in _BUILTIN_RULE_IDS:
+        _warn_shadow("rule", instance.id, cls.__name__)
+        return cls
     _RULES[instance.id] = instance
     return cls
 
@@ -33,6 +52,9 @@ def register_converter(cls: type[Converter]) -> type[Converter]:
     if not instance.format_id:
         msg = f"{cls.__name__}: Converter.format_id must be set"
         raise ValueError(msg)
+    if instance.format_id in _CONVERTERS and instance.format_id in _BUILTIN_CONVERTER_IDS:
+        _warn_shadow("converter", instance.format_id, cls.__name__)
+        return cls
     _CONVERTERS[instance.format_id] = instance
     return cls
 
@@ -70,6 +92,10 @@ def load_plugins() -> None:
     # Built-ins register themselves on import.
     from skillcraft.plugins.builtin import converters as _converters  # noqa: F401
     from skillcraft.plugins.builtin import rules as _rules  # noqa: F401
+
+    # Snapshot built-in ids so external plugins can be refused if they reuse one.
+    _BUILTIN_RULE_IDS.update(_RULES)
+    _BUILTIN_CONVERTER_IDS.update(_CONVERTERS)
 
     for group in ("skillcraft.rules", "skillcraft.converters"):
         for ep in entry_points(group=group):
