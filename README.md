@@ -32,10 +32,8 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 ## Why
 
 - **One source of truth.** Write `AGENTS.md` once; `skillcraft sync` regenerates `SKILL.md` and `CLAUDE.md`. Edit a target by hand and `sync --check` catches the drift.
-- **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules-v01).
-- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests. `--format=sarif` emits a SARIF 2.1.0 report for GitHub's **Security → Code scanning** (upload with `github/codeql-action/upload-sarif`).
 - **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules).
-- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests.
+- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests. `--format=sarif` emits a SARIF 2.1.0 report for GitHub's **Security → Code scanning** (upload with `github/codeql-action/upload-sarif`).
 - **Plugin-friendly.** Add a rule or a format converter in one file, no core changes. See [Contributing](CONTRIBUTING.md).
 
 ## Commands
@@ -121,8 +119,9 @@ Converters (new formats) use the identical shape under the `skillcraft.converter
 
 ## Roadmap
 
-- **v0.1** — lint (8 rules, 3 formats) + sync + init + version + `--format=github`. Plugin API frozen. *(this release)*
-- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions, legacy `.cursorrules` migration; static `test` (fixture-based, no model calls); autofix for SC101/SC102.
+- **v0.1** — lint (8 rules, 3 formats) + sync + init + version + `--format=github`. Plugin API frozen.
+- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions converters; rules SC105/SC203/SC204/SC304/SC401/SC402; `--format=sarif`. *(this release)*
+- **Next** — legacy `.cursorrules` migration; static `test` (fixture-based, no model calls); autofix for SC101/SC102.
 - **v1.0** — semver-frozen API, `--fix` everywhere, `skillcraft doctor`, pre-commit hook, `--reverse` promotion, PyPI trusted publishing.
 - **v2** — live model evals (`skillcraft test --eval`).
 
