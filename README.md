@@ -74,7 +74,7 @@ Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, 
 Every format parses into a single `ConfigDoc` IR and renders back out. Same-format parse→render is **lossless**; an `extra_frontmatter` escape hatch guarantees no field is ever silently dropped. Managed targets carry a marker:
 
 ```markdown
-<!-- skillcraft:managed-source path=AGENTS.md sha=30b2058ede77 -->
+<!-- skillcraft:managed-source path=AGENTS.md -->
 ```
 
 `sync --check` compares each managed target against a fresh render and fails CI on any difference. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full model.

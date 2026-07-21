@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from skillcraft.markers import (
-    content_sha,
     extra_meta_keys,
     managed_marker,
     parse_managed,
@@ -49,9 +48,17 @@ class TestStripMetaComments:
 
 class TestManaged:
     def test_marker_roundtrip(self):
-        m = managed_marker("AGENTS.md", "abc123")
-        assert m == "<!-- skillcraft:managed-source path=AGENTS.md sha=abc123 -->"
-        assert parse_managed(m) == {"path": "AGENTS.md", "sha": "abc123"}
+        m = managed_marker("AGENTS.md")
+        assert m == "<!-- skillcraft:managed-source path=AGENTS.md -->"
+        assert parse_managed(m) == {"path": "AGENTS.md"}
+
+    def test_legacy_marker_with_sha_still_parses(self):
+        # Managed targets written before the sha field was dropped carry a
+        # `sha=` fingerprint; parsing must still recover `path`.
+        legacy = "<!-- skillcraft:managed-source path=AGENTS.md sha=deadbeef -->"
+        info = parse_managed(legacy)
+        assert info is not None
+        assert info["path"] == "AGENTS.md"
 
     def test_parse_managed_none_without_marker(self):
         assert parse_managed("# no marker\n") is None
@@ -61,22 +68,16 @@ class TestManaged:
         assert strip_managed(text) == text
 
     def test_strip_removes_marker_and_leading_blanks(self):
-        text = managed_marker("AGENTS.md", "abc") + "\n\n---\nname: x\n---\nbody\n"
+        text = managed_marker("AGENTS.md") + "\n\n---\nname: x\n---\nbody\n"
         assert strip_managed(text) == "---\nname: x\n---\nbody\n"
 
     def test_strip_marker_directly_before_frontmatter(self):
-        text = managed_marker("AGENTS.md", "abc") + "\n---\nname: x\n---\nbody\n"
+        text = managed_marker("AGENTS.md") + "\n---\nname: x\n---\nbody\n"
         assert strip_managed(text) == "---\nname: x\n---\nbody\n"
 
     def test_strip_midfile_marker_preserves_rest(self):
-        text = "# intro\n\n" + managed_marker("AGENTS.md", "abc") + "\n\n# more\n"
+        text = "# intro\n\n" + managed_marker("AGENTS.md") + "\n\n# more\n"
         stripped = strip_managed(text)
         assert "# intro" in stripped
         assert "# more" in stripped
         assert "managed-source" not in stripped
-
-
-def test_content_sha_deterministic_and_short():
-    assert content_sha("hello") == content_sha("hello")
-    assert content_sha("hello") != content_sha("world")
-    assert len(content_sha("x")) == 12

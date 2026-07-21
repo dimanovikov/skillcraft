@@ -2,9 +2,11 @@
 
 Parses the canonical ``AGENTS.md`` into a :class:`ConfigDoc`, renders each
 target format, and writes a *managed* file prefixed with a
-``<!-- skillcraft:managed-source path=… sha=… -->`` marker. Drift is detected
-by comparing the marker's recorded sha against a freshly recomputed sha of the
-rendered content — robust to whitespace/line-ending noise.
+``<!-- skillcraft:managed-source path=… -->`` marker. Drift is detected by
+comparing the on-disk target (marker stripped) against a fresh render — a
+content comparison that catches edits in *both* directions (canonical changes
+and target-side hand-edits alike). Line endings are stable across platforms
+because ``.gitattributes`` enforces ``eol=lf``.
 
 Modes:
 * write (default) — regenerate managed targets; skip unmanaged ones.
@@ -20,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from skillcraft.ir import ConfigDoc
-from skillcraft.markers import content_sha, managed_marker, parse_managed, strip_managed
+from skillcraft.markers import managed_marker, parse_managed, strip_managed
 from skillcraft.plugins.registry import get_converter, load_plugins
 
 
@@ -60,7 +62,7 @@ def render_target(canonical_doc: ConfigDoc, target_format_id: str) -> str | None
 
 
 def _managed_text(canonical_rel: str, content: str) -> str:
-    marker = managed_marker(canonical_rel, content_sha(content))
+    marker = managed_marker(canonical_rel)
     return f"{marker}\n\n{content.lstrip(chr(10))}"
 
 
@@ -79,8 +81,7 @@ def _check_target(target: Path, canonical_rel: str, content: str) -> str:
     if info.get("path") != canonical_rel:
         return "wrong-source"
     # Drift = the on-disk content (minus marker) differs from a fresh render.
-    # Content comparison catches BOTH canonical changes and target-side edits;
-    # the marker sha alone would miss hand-edits to the managed target.
+    # Content comparison catches BOTH canonical changes and target-side edits.
     actual = strip_managed(existing).lstrip("\n")
     expected = content.lstrip("\n")
     if actual != expected:

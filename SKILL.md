@@ -1,4 +1,4 @@
-<!-- skillcraft:managed-source path=AGENTS.md sha=46f6cf8b3367 -->
+<!-- skillcraft:managed-source path=AGENTS.md -->
 
 ---
 name: skillcraft
@@ -30,7 +30,7 @@ uv tool install skillcraft
 
 - **Canonical source = `AGENTS.md`** (vendor-neutral, schema-less). Richer metadata (name, description, scope, license, …) rides in invisible `<!-- skillcraft:meta <json> -->` comments — valid markdown to every consumer, machine-readable to `skillcraft`.
 - **IR: `ConfigDoc`.** Every parser emits it, every renderer consumes it. Same-format parse→render is lossless; `extra_frontmatter` escape hatch guarantees no field is silently dropped.
-- **Sync.** `skillcraft sync` renders each target from the canonical doc and writes it with a `<!-- skillcraft:managed-source path=AGENTS.md sha=… -->` marker. `skillcraft sync --check` exits 1 if any managed target drifted (CI). Unmanaged files are never overwritten; opt in with `--adopt`.
+- **Sync.** `skillcraft sync` renders each target from the canonical doc and writes it with a `<!-- skillcraft:managed-source path=AGENTS.md -->` marker. `skillcraft sync --check` exits 1 if any managed target drifted (CI). Unmanaged files are never overwritten; opt in with `--adopt`.
 - **Plugins.** Subclass `Rule` or `Converter`, decorate with `@register_rule` / `@register_converter`, and (for external packages) declare an entry-point in `skillcraft.rules` / `skillcraft.converters`. See `CONTRIBUTING.md`.
 
 ## Rules (v0.1)

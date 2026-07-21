@@ -56,7 +56,7 @@ When a target format cannot natively express a field, the action is fixed (no pe
 ```
 <!-- skillcraft:meta    <json> -->   carried metadata (name, description, …)
 <!-- skillcraft:scope   <json> -->   scope_globs a target can't express natively
-<!-- skillcraft:managed-source path=… sha=… -->  marks a sync-managed target
+<!-- skillcraft:managed-source path=… -->  marks a sync-managed target
 ```
 
 | Target can't express | Action |
@@ -77,8 +77,8 @@ skillcraft sync --adopt F  # force-manage a target (overwrite from canonical)
 ```
 
 - **Determinism.** Renderers MUST be deterministic (sorted keys, stable order) — enforced by property tests. Without it, `--check` flakes and loses trust.
-- **Managed marker.** A target is "managed" iff it contains `<!-- skillcraft:managed-source path=AGENTS.md sha=<hash> -->`. Unmanaged files are never overwritten.
-- **Drift detection.** Drift = the on-disk content (marker stripped) differs from a fresh render. A pure sha-in-marker check would miss target-side hand-edits (the sha recomputes from the canonical, not the target), so the engine compares content, not just the recorded sha. This catches drift in *both* directions.
+- **Managed marker.** A target is "managed" iff it contains `<!-- skillcraft:managed-source path=AGENTS.md -->`. Unmanaged files are never overwritten.
+- **Drift detection.** Drift = the on-disk content (marker stripped) differs from a fresh render. The engine compares content (not a stored hash) so it catches target-side hand-edits as well as canonical changes — drift in *both* directions. Line endings are stable because `.gitattributes` enforces `eol=lf`.
 - **Round-trip.** Target → source is out of scope until v1.0, and only as a one-way `--reverse` promotion, not continuous sync.
 
 ## Plugin API
