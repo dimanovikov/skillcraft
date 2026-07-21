@@ -38,6 +38,7 @@ uv tool install skillcraft
 | SC105 | SKILL | `description` ≥40 chars for triggerability (warn) |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) |
+| SC203 | CLAUDE | `@imports` resolve inside the repo root (error) |
 | SC301 | ALL | required frontmatter present iff the format requires it |
 | SC302 | ALL | no merge-conflict markers in the body |
 | SC304 | ALL | body ends with a trailing newline (warn) |

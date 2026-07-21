@@ -56,6 +56,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC105 | SKILL | `description` ≥40 chars (triggerability) | warn |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops | error/warn |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) | warn/error |
+| SC203 | CLAUDE | `@imports` resolve inside the repo root | error |
 | SC301 | ALL | required frontmatter present iff the format requires it | error |
 | SC302 | ALL | no merge-conflict markers in the body | error |
 | SC304 | ALL | body ends with a trailing newline | warn |
