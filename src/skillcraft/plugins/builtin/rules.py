@@ -268,3 +268,26 @@ class NoMergeConflictMarkers(Rule):
                     file=str(doc.meta.source_path),
                     line=idx,
                 )
+
+
+@register_rule
+class MissingTrailingNewline(Rule):
+    """SC304 — config files should end with a trailing newline.
+
+    POSIX text files end with a newline; many tools and editors expect it.
+    Universal rule (runs on every format). Only the body is checked, so an
+    empty file or a frontmatter-only SKILL.md is left alone.
+    """
+
+    id = "SC304"
+    formats = ()  # all formats
+    severity = "warning"
+
+    def check(self, doc):
+        if doc.body and not doc.body.endswith("\n"):
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                "file should end with a trailing newline",
+                file=str(doc.meta.source_path),
+            )

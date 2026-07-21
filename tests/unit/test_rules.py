@@ -194,6 +194,30 @@ class TestSC302MergeMarkers:
         assert list(rule_by_id("SC302").check(skill_doc(body="# clean\n"))) == []
 
 
+class TestSC304TrailingNewline:
+    def test_missing_newline_warns(self):
+        diags = list(rule_by_id("SC304").check(skill_doc(body="# no newline")))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC304"
+        assert diags[0].severity == "warning"
+
+    def test_present_newline_ok(self):
+        assert list(rule_by_id("SC304").check(skill_doc(body="# title\n"))) == []
+
+    def test_empty_body_skipped(self):
+        # an empty body (or frontmatter-only file) has nothing to terminate
+        assert list(rule_by_id("SC304").check(skill_doc(body=""))) == []
+
+    def test_runs_on_skill(self):
+        assert len(list(rule_by_id("SC304").check(skill_doc(body="# x")))) == 1
+
+    def test_runs_on_claude(self):
+        assert len(list(rule_by_id("SC304").check(claude_doc("CLAUDE.md", body="# x")))) == 1
+
+    def test_runs_on_agents(self):
+        assert len(list(rule_by_id("SC304").check(agents_doc(body="# x")))) == 1
+
+
 def test_valid_skill_passes_all_rules(tmp_path):
     """A well-formed skill in a skills/<name>/ folder triggers no rule."""
     p = tmp_path / "skills" / "good-skill" / "SKILL.md"
