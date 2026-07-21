@@ -82,7 +82,7 @@ def _check_target(target: Path, canonical_rel: str, content: str) -> str:
         return "wrong-source"
     # Drift = the on-disk content (minus marker) differs from a fresh render.
     # Content comparison catches BOTH canonical changes and target-side edits.
-    actual = strip_managed(existing).lstrip("\n")
+    actual = strip_managed(existing)[0].lstrip("\n")
     expected = content.lstrip("\n")
     if actual != expected:
         return "drifted"
@@ -134,7 +134,7 @@ def run_sync(
         status = _check_target(spec.path, canonical_rel, content)
 
         if diff and spec.path.exists():
-            actual = strip_managed(spec.path.read_text(encoding="utf-8")).lstrip("\n")
+            actual = strip_managed(spec.path.read_text(encoding="utf-8"))[0].lstrip("\n")
             expected = content.lstrip("\n")
             if actual != expected:
                 result.diffs[spec.path] = _unified_diff(actual, expected, spec.path)

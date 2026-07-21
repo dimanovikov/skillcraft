@@ -8,30 +8,34 @@ from skillcraft.ir import find_imports, parse_sections, severity_rank, split_fro
 class TestSplitFrontmatter:
     def test_extracts_frontmatter(self):
         text = "---\nname: x\ndescription: y\n---\nbody\n"
-        fm, body = split_frontmatter(text)
+        fm, body, before = split_frontmatter(text)
         assert fm == "name: x\ndescription: y\n"
+        assert before == 4  # opening ---, name, description, closing ---
         assert body == "body\n"
 
     def test_no_frontmatter(self):
-        fm, body = split_frontmatter("# just body\n")
+        fm, body, before = split_frontmatter("# just body\n")
         assert fm is None
         assert body == "# just body\n"
+        assert before == 0
 
     def test_no_closing_delimiter_treated_as_body(self):
         text = "---\nname: x\nno closing line\n"
-        fm, body = split_frontmatter(text)
+        fm, body, before = split_frontmatter(text)
         assert fm is None
         assert body == text
+        assert before == 0
 
     def test_must_start_at_column_zero(self):
         # a leading space means this is not frontmatter
-        fm, _ = split_frontmatter(" ---\nname: x\n---\nbody\n")
+        fm, _, _ = split_frontmatter(" ---\nname: x\n---\nbody\n")
         assert fm is None
 
     def test_empty_frontmatter(self):
-        fm, body = split_frontmatter("---\n---\nbody\n")
+        fm, body, before = split_frontmatter("---\n---\nbody\n")
         assert fm == ""
         assert body == "body\n"
+        assert before == 2  # opening --- + closing ---
 
 
 class TestParseSections:
@@ -48,6 +52,11 @@ class TestParseSections:
 
     def test_no_headings(self):
         assert parse_sections("just text\nmore\n") == []
+
+    def test_first_line_rebases_line_numbers(self):
+        # first_line lets converters keep section lines file-relative.
+        secs = parse_sections("# H\n", first_line=5)
+        assert secs[0].start_line == 5
 
 
 class TestFindImports:
@@ -74,6 +83,10 @@ class TestFindImports:
         (tmp_path / "b.md").write_text("x", encoding="utf-8")
         refs = find_imports("@a.md and @b.md\n", tmp_path)
         assert {r.path for r in refs} == {"a.md", "b.md"}
+
+    def test_first_line_rebases_line_numbers(self, tmp_path):
+        refs = find_imports("see @dep.md\n", tmp_path, first_line=10)
+        assert refs[0].line == 10
 
 
 def test_severity_rank_ordering():

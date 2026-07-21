@@ -65,19 +65,19 @@ class TestManaged:
 
     def test_strip_leaves_handauthored_untouched(self):
         text = "---\nname: x\n---\nbody\n"
-        assert strip_managed(text) == text
+        assert strip_managed(text) == (text, 0)
 
     def test_strip_removes_marker_and_leading_blanks(self):
         text = managed_marker("AGENTS.md") + "\n\n---\nname: x\n---\nbody\n"
-        assert strip_managed(text) == "---\nname: x\n---\nbody\n"
+        assert strip_managed(text) == ("---\nname: x\n---\nbody\n", 2)
 
     def test_strip_marker_directly_before_frontmatter(self):
         text = managed_marker("AGENTS.md") + "\n---\nname: x\n---\nbody\n"
-        assert strip_managed(text) == "---\nname: x\n---\nbody\n"
+        assert strip_managed(text) == ("---\nname: x\n---\nbody\n", 1)
 
     def test_strip_midfile_marker_preserves_rest(self):
         text = "# intro\n\n" + managed_marker("AGENTS.md") + "\n\n# more\n"
-        stripped = strip_managed(text)
+        stripped, _ = strip_managed(text)
         assert "# intro" in stripped
         assert "# more" in stripped
         assert "managed-source" not in stripped

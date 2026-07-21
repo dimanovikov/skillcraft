@@ -94,6 +94,7 @@ class ConfigDoc:
     imports: list[ImportRef] = field(default_factory=list)
     sections: list[Section] = field(default_factory=list)
     diagnostics: list[Diagnostic] = field(default_factory=list)
+    line_offset: int = 0  # file lines preceding ``body`` (managed marker + frontmatter)
 
     @property
     def lines(self) -> list[str]:
@@ -106,28 +107,31 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _IMPORT_RE = re.compile(r"(?<![\w@])@([A-Za-z0-9_./\-]+)")
 
 
-def split_frontmatter(text: str) -> tuple[str | None, str]:
+def split_frontmatter(text: str) -> tuple[str | None, str, int]:
     """Split leading ``---`` YAML frontmatter from the body.
 
-    Returns ``(frontmatter_raw, body)``. If there is no frontmatter (or it is
-    malformed — no closing ``---``), returns ``(None, text)``.
+    Returns ``(frontmatter_raw, body, lines_before_body)``. ``lines_before_body``
+    is the number of lines consumed at the top (opening ``---``, the frontmatter
+    content, and the closing ``---``) so callers can keep diagnostics
+    file-relative. If there is no frontmatter (or it is malformed — no closing
+    ``---``), returns ``(None, text, 0)``.
     """
     if not text.startswith("---"):
-        return None, text
+        return None, text, 0
     lines = text.splitlines(keepends=True)
     for i in range(1, len(lines)):
         if lines[i].strip() == "---":
             frontmatter_raw = "".join(lines[1:i])
             body = "".join(lines[i + 1 :])
-            return frontmatter_raw, body
-    return None, text  # no closing delimiter → treat as plain body
+            return frontmatter_raw, body, i + 1  # lines[0..i] precede body
+    return None, text, 0  # no closing delimiter → treat as plain body
 
 
-def parse_sections(body: str) -> list[Section]:
+def parse_sections(body: str, first_line: int = 1) -> list[Section]:
     sections: list[Section] = []
     cur: Section | None = None
     buf: list[str] = []
-    for idx, line in enumerate(body.splitlines(), start=1):
+    for idx, line in enumerate(body.splitlines(), start=first_line):
         if _HEADING_RE.match(line):
             if cur is not None:
                 cur.body = "\n".join(buf).strip("\n")
@@ -147,10 +151,10 @@ def parse_sections(body: str) -> list[Section]:
     return sections
 
 
-def find_imports(body: str, base_dir: Path) -> list[ImportRef]:
+def find_imports(body: str, base_dir: Path, first_line: int = 1) -> list[ImportRef]:
     """Find ``@path`` references that look like file paths (contain ``/`` or ``.``)."""
     refs: list[ImportRef] = []
-    for idx, line in enumerate(body.splitlines(), start=1):
+    for idx, line in enumerate(body.splitlines(), start=first_line):
         for m in _IMPORT_RE.finditer(line):
             token = m.group(1)
             if "/" not in token and "." not in token:

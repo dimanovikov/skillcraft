@@ -354,7 +354,7 @@ class NoMergeConflictMarkers(Rule):
     severity = "error"
 
     def check(self, doc):
-        for idx, line in enumerate(doc.body.splitlines(), start=1):
+        for idx, line in enumerate(doc.body.splitlines(), start=doc.line_offset + 1):
             if line.startswith("<<<<<<<") or line.startswith(">>>>>>>"):
                 yield Diagnostic(
                     self.id,
@@ -396,6 +396,22 @@ class MissingTrailingNewline(Rule):
             )
 
 
+def _cursor_always_apply(fm: dict) -> tuple[bool, bool]:
+    """Read Cursor ``alwaysApply`` strictly.
+
+    Returns ``(is_true, valid)``. Non-boolean values (quoted strings, numbers)
+    are ``valid=False`` so callers emit a type error instead of misreading a
+    truthy string like ``"false"`` as enabled. (``bool`` is checked before any
+    numeric handling because ``bool`` subclasses ``int``.)
+    """
+    raw = fm.get("alwaysApply")
+    if raw is None:
+        return False, True
+    if isinstance(raw, bool):
+        return raw, True
+    return False, False
+
+
 @register_rule
 class CursorGlobsValid(Rule):
     """SC401 — Cursor rule globs are well-formed and the rule is reachable.
@@ -421,7 +437,15 @@ class CursorGlobsValid(Rule):
                 file=str(doc.meta.source_path),
             )
             return
-        always = bool(fm.get("alwaysApply", False))
+        always, valid = _cursor_always_apply(fm)
+        if not valid:
+            yield Diagnostic(
+                self.id,
+                "error",
+                "'alwaysApply' must be a boolean (true/false), not a string or number",
+                file=str(doc.meta.source_path),
+            )
+            return
         globs_empty = (
             globs is None
             or (isinstance(globs, str) and not globs.strip())
@@ -450,7 +474,8 @@ class CursorAlwaysApplyConflict(Rule):
 
     def check(self, doc):
         fm = doc.frontmatter or {}
-        if not bool(fm.get("alwaysApply", False)):
+        always, valid = _cursor_always_apply(fm)
+        if not valid or not always:
             return
         globs = fm.get("globs")
         has_globs = (isinstance(globs, str) and globs.strip()) or (

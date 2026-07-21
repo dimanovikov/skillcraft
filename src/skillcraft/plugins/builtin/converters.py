@@ -58,6 +58,22 @@ def _split_globs(value: object) -> list[str]:
     return []
 
 
+def _coerce_str_list(value: object) -> list[str]:
+    """Coerce a meta payload field (scope_globs / scope_file_types) to a list.
+
+    ``list("a.b")`` would split a scalar string into characters, so use this
+    helper: ``None`` → ``[]``, a non-blank ``str`` → ``[value]``, a ``list`` →
+    its stringified non-blank members; anything else → ``[]``.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, list):
+        return [str(v) for v in value if str(v).strip()]
+    return []
+
+
 def _under_folders(path: Path, parent: str, child: str) -> bool:
     """True if ``path`` lives anywhere under a ``<parent>/<child>`` folder pair."""
     parts = path.parts
@@ -90,8 +106,8 @@ class AgentsConverter(Converter):
             doc_type=TYPE_AGENTS,
             name=payload.get("name"),
             description=payload.get("description"),
-            scope_globs=list(payload.get("scope_globs") or []),
-            scope_file_types=list(payload.get("scope_file_types") or []),
+            scope_globs=_coerce_str_list(payload.get("scope_globs")),
+            scope_file_types=_coerce_str_list(payload.get("scope_file_types")),
             allowed_tools=payload.get("allowed_tools"),
             license=payload.get("license"),
             compatibility=payload.get("compatibility"),
@@ -119,8 +135,9 @@ class SkillConverter(Converter):
         return path.name.upper() == "SKILL.MD"
 
     def parse(self, path: Path, text: str) -> ConfigDoc:
-        text = strip_managed(text)  # drop sync marker so frontmatter is detected
-        fm_raw, body = split_frontmatter(text)
+        text, m_off = strip_managed(text)  # drop sync marker so frontmatter is detected
+        fm_raw, body, f_off = split_frontmatter(text)
+        offset = m_off + f_off
         meta = DocMeta(source_path=Path(path), doc_type=TYPE_SKILL)
         frontmatter: dict | None = None
         frontmatter_error: str | None = None
@@ -156,8 +173,9 @@ class SkillConverter(Converter):
             frontmatter_raw=fm_raw,
             has_frontmatter=has_fm,
             frontmatter_error=frontmatter_error,
-            sections=parse_sections(body),
-            imports=find_imports(body, base),
+            sections=parse_sections(body, offset + 1),
+            imports=find_imports(body, base, offset + 1),
+            line_offset=offset,
         )
 
     def render(self, doc: ConfigDoc) -> str:
@@ -203,15 +221,17 @@ class ClaudeConverter(Converter):
         return path.name.upper() == "CLAUDE.MD"
 
     def parse(self, path: Path, text: str) -> ConfigDoc:
-        text = strip_managed(text)  # drop sync marker; body/line-counts stay accurate
+        text, m_off = strip_managed(text)  # drop sync marker; line numbers stay file-relative
         base = Path(path).parent
         meta = DocMeta(source_path=Path(path), doc_type=TYPE_CLAUDE)
+        first_line = m_off + 1
         return ConfigDoc(
             meta=meta,
             body=text,
             has_frontmatter=False,
-            sections=parse_sections(text),
-            imports=find_imports(text, base),
+            sections=parse_sections(text, first_line),
+            imports=find_imports(text, base, first_line),
+            line_offset=m_off,
         )
 
     def render(self, doc: ConfigDoc) -> str:
@@ -239,8 +259,9 @@ class CursorConverter(Converter):
         return any(parts[i] == ".cursor" and parts[i + 1] == "rules" for i in range(len(parts) - 1))
 
     def parse(self, path: Path, text: str) -> ConfigDoc:
-        text = strip_managed(text)  # drop sync marker so frontmatter is detected
-        fm_raw, body = split_frontmatter(text)
+        text, m_off = strip_managed(text)  # drop sync marker so frontmatter is detected
+        fm_raw, body, f_off = split_frontmatter(text)
+        offset = m_off + f_off
         meta = DocMeta(source_path=Path(path), doc_type=TYPE_CURSOR)
         frontmatter: dict | None = None
         frontmatter_error: str | None = None
@@ -272,7 +293,8 @@ class CursorConverter(Converter):
             frontmatter_raw=fm_raw,
             has_frontmatter=has_fm,
             frontmatter_error=frontmatter_error,
-            sections=parse_sections(body),
+            sections=parse_sections(body, offset + 1),
+            line_offset=offset,
         )
 
     def render(self, doc: ConfigDoc) -> str:
@@ -324,8 +346,9 @@ class ClaudeRulesConverter(Converter):
         return path.suffix == ".md" and _under_folders(path, ".claude", "rules")
 
     def parse(self, path: Path, text: str) -> ConfigDoc:
-        text = strip_managed(text)
-        fm_raw, body = split_frontmatter(text)
+        text, m_off = strip_managed(text)
+        fm_raw, body, f_off = split_frontmatter(text)
+        offset = m_off + f_off
         meta = DocMeta(source_path=Path(path), doc_type=TYPE_CLAUDE_RULES)
         frontmatter: dict | None = None
         frontmatter_error: str | None = None
@@ -357,7 +380,8 @@ class ClaudeRulesConverter(Converter):
             frontmatter_raw=fm_raw,
             has_frontmatter=has_fm,
             frontmatter_error=frontmatter_error,
-            sections=parse_sections(body),
+            sections=parse_sections(body, offset + 1),
+            line_offset=offset,
         )
 
     def render(self, doc: ConfigDoc) -> str:
@@ -410,8 +434,9 @@ class CopilotConverter(Converter):
         )
 
     def parse(self, path: Path, text: str) -> ConfigDoc:
-        text = strip_managed(text)
-        fm_raw, body = split_frontmatter(text)
+        text, m_off = strip_managed(text)
+        fm_raw, body, f_off = split_frontmatter(text)
+        offset = m_off + f_off
         meta = DocMeta(source_path=Path(path), doc_type=TYPE_COPILOT)
         frontmatter: dict | None = None
         frontmatter_error: str | None = None
@@ -443,7 +468,8 @@ class CopilotConverter(Converter):
             frontmatter_raw=fm_raw,
             has_frontmatter=has_fm,
             frontmatter_error=frontmatter_error,
-            sections=parse_sections(body),
+            sections=parse_sections(body, offset + 1),
+            line_offset=offset,
         )
 
     def render(self, doc: ConfigDoc) -> str:

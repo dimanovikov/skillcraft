@@ -120,7 +120,8 @@ Converters (new formats) use the identical shape under the `skillcraft.converter
 ## Roadmap
 
 - **v0.1** — lint (8 rules, 3 formats) + sync + init + version + `--format=github`. Plugin API frozen.
-- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions converters; rules SC105/SC203/SC204/SC304/SC401/SC402; `--format=sarif`. *(this release)*
+- **v0.2** — `.cursor/rules`, `.claude/rules`, copilot-instructions converters; rules SC105/SC203/SC204/SC304/SC401/SC402; `--format=sarif`.
+- **v0.2.1** — bugfix patch: file-relative diagnostic line numbers (account for the managed marker + frontmatter offset); strict `alwaysApply` type check (SC401/SC402); `scope_globs`/`scope_file_types` string coercion. *(this release)*
 - **Next** — legacy `.cursorrules` migration; static `test` (fixture-based, no model calls); autofix for SC101/SC102.
 - **v1.0** — semver-frozen API, `--fix` everywhere, `skillcraft doctor`, pre-commit hook, `--reverse` promotion, PyPI trusted publishing.
 - **v2** — live model evals (`skillcraft test --eval`).
