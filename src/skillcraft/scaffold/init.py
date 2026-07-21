@@ -18,12 +18,12 @@ Describe your project / skill instructions here.
 
 ## Build
 
-`npm test`
+Run your project's build or test command here.
 """
 
 
 _CONFIG_TEMPLATE = """\
-# skillcraft configuration — https://github.com/topics/skillcraft
+# skillcraft configuration — https://github.com/cloudroad-io/skillcraft
 [sync]
 canonical = "AGENTS.md"
 
