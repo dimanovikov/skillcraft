@@ -70,6 +70,41 @@ class TestSC103Description:
         assert list(rule_by_id("SC103").check(skill_doc(description=None))) == []
 
 
+class TestSC105DescriptionTooShort:
+    def test_too_short_warns(self):
+        diags = list(rule_by_id("SC105").check(skill_doc(description="Fix it.")))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC105"
+        assert diags[0].severity == "warning"
+        assert "40" in diags[0].message
+
+    def test_valid_length_ok(self):
+        assert (
+            list(
+                rule_by_id("SC105").check(
+                    skill_doc(description="Lint, sync and scaffold agent-config files.")
+                )
+            )
+            == []
+        )
+
+    @pytest.mark.parametrize("length", [40, 41])
+    def test_at_or_above_threshold_ok(self, length):
+        assert list(rule_by_id("SC105").check(skill_doc(description="a" * length))) == []
+
+    @pytest.mark.parametrize("length", [1, 39])
+    def test_below_threshold_warns(self, length):
+        diags = list(rule_by_id("SC105").check(skill_doc(description="a" * length)))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC105"
+
+    def test_none_skipped(self):
+        assert list(rule_by_id("SC105").check(skill_doc(description=None))) == []
+
+    def test_blank_skipped(self):
+        assert list(rule_by_id("SC105").check(skill_doc(description="   "))) == []
+
+
 class TestSC104BodyTokens:
     def test_small_body_ok(self):
         assert list(rule_by_id("SC104").check(skill_doc(body="# short\n"))) == []
@@ -225,7 +260,10 @@ def test_valid_skill_passes_all_rules(tmp_path):
     doc = skill_doc(
         name="good-skill",
         path=str(p),
-        frontmatter={"name": "good-skill", "description": "A useful skill."},
+        frontmatter={
+            "name": "good-skill",
+            "description": "A useful skill that performs useful work in the repo.",
+        },
         has_frontmatter=True,
         body="# Good skill\n\nDoes useful things.\n",
     )

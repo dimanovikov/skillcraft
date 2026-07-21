@@ -41,6 +41,7 @@ uv tool install skillcraft
 | SC102 | SKILL | in a `skills/<name>/` folder, `name` matches the folder |
 | SC103 | SKILL | `description` present, ≤1024 chars |
 | SC104 | SKILL | body ≈ <5000 tokens (warn past 4000) |
+| SC105 | SKILL | `description` ≥40 chars for triggerability (warn) |
 | SC201 | CLAUDE | `@path` imports resolve, no cycles, ≤4 hops |
 | SC202 | CLAUDE | line count <200 (warn), <500 (error) |
 | SC301 | ALL | required frontmatter present iff the format requires it |

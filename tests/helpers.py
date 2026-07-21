@@ -25,7 +25,7 @@ def lint_doc(doc: ConfigDoc) -> list[Diagnostic]:
 
 def skill_doc(
     name="good-skill",
-    description="A useful skill that does things.",
+    description="A useful skill that performs useful work in the repo.",
     body="# Body\n",
     path="good-skill/SKILL.md",
     extra=None,

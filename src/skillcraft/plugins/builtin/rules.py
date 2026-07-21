@@ -100,6 +100,34 @@ class SkillDescription(Rule):
 
 
 @register_rule
+class SkillDescriptionTooShort(Rule):
+    """SC105 — skill ``description`` should be ≥40 chars for triggerability.
+
+    Agents match skills on description text, so a terse description makes a
+    skill hard to trigger. Presence (SC301) and the length ceiling (SC103) are
+    owned elsewhere; this rule is purely about description *quality*.
+    """
+
+    id = "SC105"
+    formats = ("skill",)
+    severity = "warning"
+    MIN_LENGTH = 40
+
+    def check(self, doc):
+        desc = doc.meta.description
+        if not isinstance(desc, str) or not desc.strip():
+            return  # missing/blank is SC301/SC103's job
+        if len(desc) < self.MIN_LENGTH:
+            yield Diagnostic(
+                self.id,
+                self.severity,
+                f"skill 'description' is {len(desc)} chars; "
+                f"use >= {self.MIN_LENGTH} for triggerability",
+                file=str(doc.meta.source_path),
+            )
+
+
+@register_rule
 class SkillBodyTokens(Rule):
     """SC104 — skill body estimated <5000 tokens (warn past 4000)."""
 
