@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from skillcraft.ir import ImportRef, find_imports
+from skillcraft.ir import ConfigDoc, DocMeta, ImportRef, find_imports, parse_sections
 from tests.helpers import agents_doc, claude_doc, lint_doc, rule_by_id, skill_doc
 
 
@@ -219,6 +221,41 @@ class TestSC203ImportScope:
             imports=[ImportRef("missing.md", None, 1)],
         )
         assert list(rule_by_id("SC203").check(doc)) == []
+
+
+class TestSC204SkippedHeadings:
+    def _doc(self, body, doc_type="claude"):
+        return ConfigDoc(
+            meta=DocMeta(source_path=Path("CLAUDE.md"), doc_type=doc_type),
+            body=body,
+            sections=parse_sections(body),
+        )
+
+    def test_skip_1_to_3_warns(self):
+        diags = list(rule_by_id("SC204").check(self._doc("# Title\n\n### Sub\n")))
+        assert len(diags) == 1
+        assert diags[0].rule_id == "SC204"
+        assert diags[0].severity == "warning"
+        assert diags[0].line == 3  # the '### Sub' line
+
+    def test_sequential_levels_ok(self):
+        assert list(rule_by_id("SC204").check(self._doc("# A\n\n## B\n\n### C\n"))) == []
+
+    def test_going_up_ok(self):
+        # decreasing levels (### → #) is fine, not a skip
+        assert list(rule_by_id("SC204").check(self._doc("### A\n\n# B\n"))) == []
+
+    def test_first_heading_any_level_ok(self):
+        # starting at h3 with no prior heading is not a skip
+        assert list(rule_by_id("SC204").check(self._doc("### First\n"))) == []
+
+    def test_no_headings_ok(self):
+        assert list(rule_by_id("SC204").check(self._doc("plain text only\n"))) == []
+
+    def test_runs_on_skill(self):
+        # universal — also flags jumps in SKILL bodies
+        diags = list(rule_by_id("SC204").check(self._doc("# T\n\n### S\n", "skill")))
+        assert len(diags) == 1
 
 
 class TestSC301RequiredFields:
