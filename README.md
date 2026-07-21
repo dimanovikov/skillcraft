@@ -33,14 +33,14 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 
 - **One source of truth.** Write `AGENTS.md` once; `skillcraft sync` regenerates `SKILL.md` and `CLAUDE.md`. Edit a target by hand and `sync --check` catches the drift.
 - **Lint that knows the formats.** Kebab-case names, frontmatter presence, import cycles, token budgets, merge-conflict markers — see [the rule table](#rules-v01).
-- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests.
+- **PR annotations.** `--format=github` emits `::error file=…,line=…::…` so findings render inline on pull requests. `--format=sarif` emits a SARIF 2.1.0 report for GitHub's **Security → Code scanning** (upload with `github/codeql-action/upload-sarif`).
 - **Plugin-friendly.** Add a rule or a format converter in one file, no core changes. See [Contributing](CONTRIBUTING.md).
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `skillcraft lint [--check] [-f plain\|json\|github]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
+| `skillcraft lint [--check] [-f plain\|json\|github\|sarif]` | Run the rule set over discovered config files; exit 1 on any ERROR. |
 | `skillcraft sync [--check] [--diff] [--adopt <file>]` | Regenerate managed targets from `AGENTS.md`; detect or rewrite drift. |
 | `skillcraft init [--name <name>]` | Scaffold a minimal `AGENTS.md` + `.skillcraft.toml`. |
 | `skillcraft version` | Print the version. |
