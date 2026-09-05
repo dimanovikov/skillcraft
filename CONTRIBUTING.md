@@ -2,14 +2,14 @@
 
 Thanks for your interest! `skillcraft` is built to be extended — most contributions are a **single new file** (a rule or a converter) with **zero core changes**. That's by design: the contributor experience *is* the product.
 
-> Every rule spec'd in [ARCHITECTURE.md](ARCHITECTURE.md) but not yet implemented is an open [good-first-issue](https://github.com/cloudroad-io/skillcraft/contribute). Grab one.
+> Every rule spec'd in [ARCHITECTURE.md](ARCHITECTURE.md) but not yet implemented is an open [good-first-issue](https://github.com/dimanovikov/skillcraft/contribute). Grab one.
 
 ## Setup
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/cloudroad-io/skillcraft.git
+git clone https://github.com/dimanovikov/skillcraft.git
 cd skillcraft
 uv sync            # creates .venv, installs dev deps
 uv run pytest      # 120+ tests, <1s

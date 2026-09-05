@@ -24,7 +24,7 @@ Run your project's build or test command here.
 
 
 _CONFIG_TEMPLATE = """\
-# skillcraft configuration — https://github.com/cloudroad-io/skillcraft
+# skillcraft configuration — https://github.com/dimanovikov/skillcraft
 [sync]
 canonical = "AGENTS.md"
 

@@ -1,6 +1,6 @@
 # skillcraft
 
-[![CI](https://github.com/cloudroad-io/skillcraft/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudroad-io/skillcraft/actions/workflows/ci.yml)
+[![CI](https://github.com/dimanovikov/skillcraft/actions/workflows/ci.yml/badge.svg)](https://github.com/dimanovikov/skillcraft/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/skillcraft.svg)](https://pypi.org/project/skillcraft/)
 [![Python](https://img.shields.io/pypi/pyversions/skillcraft.svg)](https://pypi.org/project/skillcraft/)
 [![License: MIT](https://img.shields.io/pypi/l/skillcraft.svg)](LICENSE)
@@ -64,7 +64,7 @@ skillcraft lint --check   # exit 1 on any ERROR; --format=github annotates the P
 | SC401 | CURSOR | globs well-formed and the rule is reachable | error/warn |
 | SC402 | CURSOR | not both `alwaysApply: true` and `globs` | warn |
 
-Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, `SC3xx` = universal, `SC4xx` = `.cursor` (v0.2). Every spec'd rule not yet implemented is an open [good-first-issue](https://github.com/cloudroad-io/skillcraft/contribute).
+Rule IDs are stable and never renumbered — `SC1xx` = SKILL, `SC2xx` = CLAUDE, `SC3xx` = universal, `SC4xx` = `.cursor` (v0.2). Every spec'd rule not yet implemented is an open [good-first-issue](https://github.com/dimanovikov/skillcraft/contribute).
 
 ## How it works
 

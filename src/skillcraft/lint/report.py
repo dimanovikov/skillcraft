@@ -122,7 +122,7 @@ def format_sarif(diags: list[Diagnostic]) -> str:
                     "driver": {
                         "name": "skillcraft",
                         "version": __version__,
-                        "informationUri": "https://github.com/cloudroad-io/skillcraft",
+                        "informationUri": "https://github.com/dimanovikov/skillcraft",
                         "rules": [{"id": rid} for rid in sorted(rule_ids)],
                     }
                 },
