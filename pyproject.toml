@@ -12,6 +12,11 @@ dependencies = [
     "pyyaml>=6",
 ]
 
+[project.urls]
+Homepage = "https://github.com/dimanovikov/skillcraft"
+Repository = "https://github.com/dimanovikov/skillcraft"
+Issues = "https://github.com/dimanovikov/skillcraft/issues"
+
 [project.scripts]
 skillcraft = "skillcraft.cli:app"
 sc = "skillcraft.cli:app"
